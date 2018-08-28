@@ -24,17 +24,29 @@ public class MultiNet{
 	private List<DynamicBayesNet> networks;
 	private Observations o;
 	private double[][][] clustering;
+	private  boolean is_bcDBN;
+	private boolean is_cDBN;
+	private boolean spanning;
+	private int intra_ind;
+	private int root;
+	private int maxParents;
 	
 	
 	/**
 	 * @param o Observations to cluster
 	 * @param numClusters Number of clusters 
 	 */
-	public MultiNet(Observations o, int numClusters) {
+	public MultiNet(Observations o, int numClusters, boolean is_bcDBN, boolean is_cDBN, boolean spanning, int intra_ind, int root, int maxParents) {
 		super();
 		this.o = o;
 		int numSubjects = o.getNumSubjects();
 		int numTransitions = o.getNumTransitions();
+		this.is_bcDBN = is_bcDBN;
+		this.is_cDBN = is_cDBN;
+		this.spanning = spanning;
+		this.intra_ind = intra_ind;
+		this.root = root;
+		this.maxParents = maxParents;
 		
 		Scores s;
 		DynamicBayesNet dbn;
@@ -43,9 +55,21 @@ public class MultiNet{
 		clustering = new double[numTransitions][numSubjects][numClusters];
 		
 		for(int i = 0; i < numClusters; i++) {
-			s = new Scores(o, 1, true, true);
+			s = new Scores(o, this.maxParents, true, true);
 			s.evaluate(new RandomScoringFunction());
-			dbn = s.toDBN(-1, false);
+			
+			if(this.is_bcDBN) {
+				System.out.println("Learning bcDBN networks.");
+				dbn=s.to_bcDBN(new RandomScoringFunction(), this.intra_ind);
+
+			}else if(this.is_cDBN) {
+				System.out.println("Learning cDBN networks.");
+				dbn=s.to_cDBN(new RandomScoringFunction(), this.intra_ind);
+			}else {
+				System.out.println("Learning tDBN networks.");
+				dbn = s.toDBN(this.root, this.spanning);
+			}
+			
 			dbn.generateParameters();
 			networks.add(dbn);
 		}
@@ -167,7 +191,13 @@ public class MultiNet{
 		return clusteringNew;
 	}
 	
-	private List<DynamicBayesNet> trainNetworks(double[][][] counts) {
+	
+	
+	public List<DynamicBayesNet> getNetworks() {
+		return networks;
+	}
+
+	private List<DynamicBayesNet> trainNetworks(double[][][] counts ) {
 		Scores s;
 		DynamicBayesNet dbn;
 		Observations oNew;
@@ -181,16 +211,23 @@ public class MultiNet{
 		for(int c = 0; c < numClusters; c++) {
 			clust = selectCluster(counts, c);
 			oNew = new Observations(attributes, obs, clust);
-			s =  new Scores(oNew, 1, true, true);
+			s =  new Scores(oNew, this.maxParents, true, true);
 			s.evaluate(new LLScoringFunction());
-			dbn = s.toDBN(1, false);
+			if(this.is_bcDBN) {
+				dbn=s.to_bcDBN(new LLScoringFunction(), this.intra_ind);
+
+			}else if(this.is_cDBN) {
+				dbn=s.to_cDBN(new LLScoringFunction(), this.intra_ind);
+			}else {;
+				dbn = s.toDBN(this.root, this.spanning);
+			}
 			dbn.learnParameters(oNew, true);
 			networksNew.add(dbn);
 		}
 		return networksNew;	
 	}
 	
-	private void teste() {
+	public void clust() {
 		int numClusters = networks.size();
 		List<DynamicBayesNet> networkPrev = networks;
 		List<DynamicBayesNet> networkNew = networks;
@@ -331,14 +368,15 @@ public class MultiNet{
 		double[] alpha = getAlpha(clustering);
 		for(int c = 0; c < numClusters; c++) {
 			sb.append("--- Cluster " + c + " ---" + ls);
-			for(int s = 0; s < numSubjects; s++) {
-				sb.append(clustering[0][s][c] + ls);
-			}
+//			for(int s = 0; s < numSubjects; s++) {
+//				sb.append(clustering[0][s][c] + ls);
+//			}
+			sb.append(networks.get(c).toString());
 			sb.append(ls + "Alpha: " + alpha[c] + ls);
 		}
 		
-		double score = getScore(networks, clustering);
-		sb.append(ls + "Final Score: " + score + ls);
+//		double score = getScore(networks, clustering);
+//		sb.append(ls + "Final Score: " + score + ls);
 		
 		return sb.toString();	
 	}
@@ -367,31 +405,31 @@ public class MultiNet{
 		
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd;
-		try {
-			cmd = parser.parse(options, args);
-			int numCluster = Integer.parseInt(cmd.getOptionValue("n"));
-			File destinationLocation = new File(cmd.getOptionValue("i"));
-			
-			String path = destinationLocation.getPath();
-			path += File.separator + "combinedDataset.csv";
-			Observations o = new Observations(path, null, 1);
-			//System.out.print(o);
-			MultiNet m = new MultiNet(o, numCluster);
-			long startTime = System.nanoTime();
-			m.teste();
-			long endTime = System.nanoTime();
-			long duration = (endTime - startTime)/1000000;
-			System.out.println(duration);
-			//System.out.print(m);
-			path = destinationLocation.getPath();
-			path += File.separator + "output.csv";
-			m.writeToFile(path);
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp("Multinet", options);
-			System.out.println(e);
-		}
+//		try {
+//			cmd = parser.parse(options, args);
+//			int numCluster = Integer.parseInt(cmd.getOptionValue("n"));
+//			File destinationLocation = new File(cmd.getOptionValue("i"));
+//			
+//			String path = destinationLocation.getPath();
+//			path += File.separator + "combinedDataset.csv";
+//			Observations o = new Observations(path, null, 1);
+//			//System.out.print(o);
+//			//MultiNet m = new MultiNet(o, numCluster);
+//			long startTime = System.nanoTime();
+//			m.clust();
+//			long endTime = System.nanoTime();
+//			long duration = (endTime - startTime)/1000000;
+//			System.out.println(duration);
+//			//System.out.print(m);
+//			path = destinationLocation.getPath();
+//			path += File.separator + "output.csv";
+//			m.writeToFile(path);
+//		} catch (ParseException e) {
+//			// TODO Auto-generated catch block
+//			HelpFormatter formatter = new HelpFormatter();
+//			formatter.printHelp("Multinet", options);
+//			System.out.println(e);
+//		}
 		
 	}
 	

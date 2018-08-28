@@ -428,9 +428,11 @@ public class Scores {
 
 	}
 	
-
-	
 	public DynamicBayesNet to_bcDBN(ScoringFunction sf,int k) {
+		return to_bcDBN(sf, k, false); 
+	}
+	
+	public DynamicBayesNet to_bcDBN(ScoringFunction sf,int k, boolean prior) {
 
 		if (!evaluated)
 			throw new IllegalStateException("Scores must be evaluated before being converted to DBN");
@@ -521,6 +523,13 @@ public class Scores {
 
 			transitionNets.add(bt);
 		}
+		
+		if(prior) {
+			List<Edge> prior_array = new ArrayList<Edge>();
+			List<Attribute> a = observations.getAttributes();
+			BayesNet b0 = new BayesNet(a, prior_array);
+			return new DynamicBayesNet(observations.getAttributes(), b0, transitionNets);
+		}
 
 		return new DynamicBayesNet(observations.getAttributes(), transitionNets);
 
@@ -528,9 +537,11 @@ public class Scores {
 	
 	
 	
-	
-	
 	public DynamicBayesNet to_cDBN(ScoringFunction sf,int k) {
+		return to_cDBN(sf, k, false); 
+	}
+	
+	public DynamicBayesNet to_cDBN(ScoringFunction sf,int k, boolean prior) {
 
 		if (!evaluated)
 			throw new IllegalStateException("Scores must be evaluated before being converted to DBN");
@@ -614,6 +625,13 @@ public class Scores {
 					inter);
 
 			transitionNets.add(bt);
+		}
+		
+		if(prior) {
+			List<Edge> prior_array = new ArrayList<Edge>();
+			List<Attribute> a = observations.getAttributes();
+			BayesNet b0 = new BayesNet(a, prior_array);
+			return new DynamicBayesNet(observations.getAttributes(), b0, transitionNets);
 		}
 
 		return new DynamicBayesNet(observations.getAttributes(), transitionNets);

@@ -27,14 +27,14 @@ public class GenerateTimeSeries{
 				.hasArg()
 				.required(true)
 				.desc("Number of attributes of the network.")
-				.argName("numAttri")
+				.argName("int")
 				.longOpt("numAttributes")
 				.build();
 		Option numTime = Option.builder("t")
 				.hasArg()
 				.required(true)
 				.desc("Number of time points of the timeseries.")
-				.argName("numTime")
+				.argName("int")
 				.longOpt("numTimepoints")
 				.build();
 		
@@ -42,21 +42,21 @@ public class GenerateTimeSeries{
 				.hasArg()
 				.required(true)
 				.desc("Number of timeseries to be generated.")
-				.argName("numObs")
+				.argName("int")
 				.longOpt("numObservations")
 				.build();
 		
 		Option numNet = Option.builder("n")
 				.hasArg()
 				.desc("Number of DBN to be generated.  If not supplied, it will be generated just one DBN.")
-				.argName("numNet")
+				.argName("int")
 				.longOpt("numNetworks")
 				.build();
 		
 		Option alphaSize = Option.builder("v")
 				.hasArg()
 				.desc("Cardinality of the attributes.  If not supplied, it will be 2.")
-				.argName("alphaSize")
+				.argName("int")
 				.longOpt("alphabetSize")
 				.build();
 		
@@ -87,7 +87,22 @@ public class GenerateTimeSeries{
 				.argName("file")
 				.build();
 		
+		Option bcDBN= Option.builder("bcDBN")
+				.longOpt("bcDBN")
+				.desc("Learns a bcDBN structure.")
+				.build();
 		
+		Option cDBN= Option.builder("cDBN")
+				.longOpt("cDBN")
+				.desc("Learns a cDBN structure.")
+				.build();
+		
+		Option intra_in= Option.builder("ind")
+				.longOpt("intra_in")
+				.desc("In-degree of the intra-slice network")
+				.hasArg()
+				.argName("int")
+				.build();
 		
 		
 		
@@ -101,6 +116,9 @@ public class GenerateTimeSeries{
 		options.addOption(compact);
 		options.addOption(folder);
 		options.addOption(outputFile);
+		options.addOption(bcDBN);
+		options.addOption(cDBN);
+		options.addOption(intra_in);
 		
 		CommandLineParser parser = new DefaultParser();
 		
@@ -114,6 +132,9 @@ public class GenerateTimeSeries{
 			int numAttributes = Integer.parseInt(cmd.getOptionValue("a"));
 			int numObservations = Integer.parseInt(cmd.getOptionValue("s"));
 			int numTimepoints = Integer.parseInt(cmd.getOptionValue("t"));
+			boolean is_bcDBN = cmd.hasOption("bcDBN");
+			boolean is_cDBN = cmd.hasOption("cDBN");
+			int intra_ind = Integer.parseInt(cmd.getOptionValue("ind","2"));
 			int markovLag = 1;
 			
 			Observations o;
@@ -155,7 +176,24 @@ public class GenerateTimeSeries{
 				o = new Observations(a, obs, counts);
 				s = new Scores(o, 1, true, true);
 				s.evaluate(new RandomScoringFunction());
-				dbn = s.toDBN(-1, false, true);
+				
+				
+				
+//				dbn = s.toDBN(-1, false, true);
+				if(is_bcDBN) {
+					System.out.println("Learning bcDBN networks.");
+					dbn=s.to_bcDBN(new RandomScoringFunction(),intra_ind , true);
+
+				}else if(is_cDBN) {
+					System.out.println("Learning cDBN networks.");
+					dbn=s.to_cDBN(new RandomScoringFunction(),intra_ind, true);
+				}else {
+					System.out.println("Learning tDBN networks.");
+					dbn = s.toDBN(-1, false, true);
+				}
+				
+				
+				
 				dbn.generateParameters();
 				
 				if (cmd.hasOption("d")) {
