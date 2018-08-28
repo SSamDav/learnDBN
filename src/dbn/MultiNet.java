@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -59,14 +60,11 @@ public class MultiNet{
 			s.evaluate(new RandomScoringFunction());
 			
 			if(this.is_bcDBN) {
-				System.out.println("Learning bcDBN networks.");
 				dbn=s.to_bcDBN(new RandomScoringFunction(), this.intra_ind);
 
 			}else if(this.is_cDBN) {
-				System.out.println("Learning cDBN networks.");
 				dbn=s.to_cDBN(new RandomScoringFunction(), this.intra_ind);
 			}else {
-				System.out.println("Learning tDBN networks.");
 				dbn = s.toDBN(this.root, this.spanning);
 			}
 			
@@ -145,6 +143,25 @@ public class MultiNet{
 					for(int t = 0; t < numTransitions; t++) {
 						newClustering[t][s][c] = 0;
 						if(c == max_cluster)
+							newClustering[t][s][c] = 1;
+					}
+				}
+			}else{
+				Random r = new Random();
+				int clust = 0;
+				double probsum = 0;
+				double prob = 0 + (1 - 0) * r.nextDouble();
+				for(int c = 0; c < numClusters; c++) {
+					probsum += newClustering[0][s][c];
+					if(probsum >= prob) {
+						clust = c;
+						break;
+					}
+				}
+				for(int c = 0; c < numClusters; c++) {
+					for(int t = 0; t < numTransitions; t++) {
+						newClustering[t][s][c] = 0;
+						if(c == clust)
 							newClustering[t][s][c] = 1;
 					}
 				}
@@ -237,9 +254,16 @@ public class MultiNet{
 		boolean mostprobable = false;
 		int it = 0;
 		//System.out.println("Score: " + score);
+		if(!mostprobable)
+			System.out.println("Starting with stochastic EM.");
+		else
+			System.out.println("Starting with classification EM.");
 		while(score > score_prev){
-			if(it >= 100 & !mostprobable)
+			if(it >= 100 & !mostprobable) {
 				mostprobable = true;
+				System.out.println("Changing to classification EM.");
+			}
+				
 			networkPrev = networkNew;
 			score_prev = score;
 			networkNew = trainNetworks(counts);
