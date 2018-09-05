@@ -196,6 +196,7 @@ public class learnDBM{
 			
 			
 			System.out.println(m);
+			System.out.println("BIC Score: " + m.getBICScore());
 			
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block

@@ -276,6 +276,29 @@ public class MultiNet{
 		this.clustering = computeClusters(networkPrev, true, false);
 	}
 	
+	public double getBICScore() {
+		Observations oNew;
+		List<Attribute> attributes = this.o.getAttributes();
+		int[][][] obs = this.o.getObservationsMatrix();
+		int c = 0;
+		double score = 0;
+		double numParam = 0;
+		double[][] clust;
+		
+		
+		for(DynamicBayesNet dbn : this.networks) {
+			clust = selectCluster(this.clustering, c);
+			oNew = new Observations(attributes, obs, clust);
+			score += 2*dbn.getScore(oNew, new LLScoringFunction(), true);
+			numParam += dbn.getNumberParameters(oNew);
+			c += 1;
+		}
+		
+//		System.out.println("LL: " + score + " Penalizing Term: " + Math.log(o.getNumSubjects()));
+		score -= numParam*Math.log(o.getNumSubjects());
+		return score;
+	}
+	
 	public double getScore(List<DynamicBayesNet> net, double[][][] clustering){
 		Observations oNew;
 		int numSubjects = o.getNumSubjects();

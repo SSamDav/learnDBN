@@ -184,7 +184,11 @@ public class Observations {
 		numSubjects = new int[observationsMatrix.length];
 
 		// assume constant number of observations per transition
-		int totalNumSubjects = observationsMatrix[0].length;
+//		int totalNumSubjects = observationsMatrix[0].length;
+		int totalNumSubjects = 0;
+		for(int i = 0; i < counts[0].length; i++) {
+			totalNumSubjects += counts[0][i];
+		}
 		Arrays.fill(numSubjects, totalNumSubjects);
 
 		// generate header
@@ -197,7 +201,7 @@ public class Observations {
 		this.subjectIsPresent = new LinkedHashMap<String, boolean[]>((int) Math.ceil(totalNumSubjects / 0.75));
 		boolean[] allTrue = new boolean[numTransitions()];
 		Arrays.fill(allTrue, true);
-		for (int i = 0; i < totalNumSubjects; i++)
+		for (int i = 0; i <  counts[0].length; i++)
 			subjectIsPresent.put("" + i, allTrue);
 	}
 

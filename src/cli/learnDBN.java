@@ -184,14 +184,11 @@ public class learnDBN{
 						s.evaluate(new RandomScoringFunction());
 						
 						if(is_bcDBN) {
-							System.out.println("Learning bcDBN networks.");
 							dbn=s.to_bcDBN(sf,intra_ind);
 
 						}else if(is_cDBN) {
-							System.out.println("Learning cDBN networks.");
 							dbn=s.to_cDBN(sf,intra_ind);
 						}else {
-							System.out.println("Learning tDBN networks.");
 							dbn = s.toDBN(root, spanning);
 						}
 						
@@ -205,14 +202,11 @@ public class learnDBN{
 							sNew.evaluate(sf);
 							
 							if(is_bcDBN) {
-								System.out.println("Learning bcDBN networks.");
 								dbn=sNew.to_bcDBN(sf,intra_ind);
 
 							}else if(is_cDBN) {
-								System.out.println("Learning cDBN networks.");
 								dbn=sNew.to_cDBN(sf,intra_ind);
 							}else {
-								System.out.println("Learning tDBN networks.");
 								dbn = sNew.toDBN(root, spanning);
 							}
 							
@@ -234,14 +228,11 @@ public class learnDBN{
 						s.evaluate(sf);
 						
 						if(is_bcDBN) {
-							System.out.println("Learning bcDBN networks.");
 							dbn=s.to_bcDBN(sf,intra_ind);
 
 						}else if(is_cDBN) {
-							System.out.println("Learning cDBN networks.");
 							dbn=s.to_cDBN(sf,intra_ind);
 						}else {
-							System.out.println("Learning tDBN networks.");
 							dbn = s.toDBN(root, spanning);
 						}
 						dbn.learnParameters(o, stationary);

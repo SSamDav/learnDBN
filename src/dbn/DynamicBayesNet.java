@@ -83,6 +83,7 @@ public class DynamicBayesNet {
 	
 	public DynamicBayesNet parameterEM(Observations o, boolean stationaryProcess) {
 		DynamicBayesNet dbn = this;
+		DynamicBayesNet dbnOld;
 		Observations o_new;
 		double score = Double.NEGATIVE_INFINITY;
 		double scorePrev;
@@ -99,6 +100,19 @@ public class DynamicBayesNet {
 		}while(score > scorePrev);
 		
 		return dbn;
+	}
+	
+	public double getNumberParameters(Observations o) {
+		double numParam = 0;
+		Integer ParentsPresent = null;
+		
+		for(int n = 0; n < attributes.size(); n++) {
+			LocalConfiguration c = new LocalConfiguration(o.getAttributes(), o.getMarkovLag(),
+					transitionNets.get(0).getParents().get(n), ParentsPresent, n);
+			numParam += c.getNumParameters();
+		}
+		
+		return numParam;
 	}
 	
 	public double getScore(Observations o, ScoringFunction sf, boolean stationaryProcess) {

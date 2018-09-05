@@ -181,14 +181,10 @@ public class GenerateTimeSeries{
 				
 //				dbn = s.toDBN(-1, false, true);
 				if(is_bcDBN) {
-					System.out.println("Learning bcDBN networks.");
 					dbn=s.to_bcDBN(new RandomScoringFunction(),intra_ind , true);
-
 				}else if(is_cDBN) {
-					System.out.println("Learning cDBN networks.");
 					dbn=s.to_cDBN(new RandomScoringFunction(),intra_ind, true);
 				}else {
-					System.out.println("Learning tDBN networks.");
 					dbn = s.toDBN(-1, false, true);
 				}
 				
