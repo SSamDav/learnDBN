@@ -31,13 +31,15 @@ public class MultiNet{
 	private int intra_ind;
 	private int root;
 	private int maxParents;
+	private boolean stationaryProcess;
+	private boolean multithread;
 	
 	
 	/**
 	 * @param o Observations to cluster
 	 * @param numClusters Number of clusters 
 	 */
-	public MultiNet(Observations o, int numClusters, boolean is_bcDBN, boolean is_cDBN, boolean spanning, int intra_ind, int root, int maxParents) {
+	public MultiNet(Observations o, int numClusters, boolean is_bcDBN, boolean is_cDBN, boolean spanning, int intra_ind, int root, int maxParents,  boolean stationaryProcess, boolean multithread) {
 		super();
 		this.o = o;
 		int numSubjects = o.getNumSubjects();
@@ -48,6 +50,8 @@ public class MultiNet{
 		this.intra_ind = intra_ind;
 		this.root = root;
 		this.maxParents = maxParents;
+		this.stationaryProcess =  stationaryProcess;
+		this.multithread = multithread;
 		
 		Scores s;
 		DynamicBayesNet dbn;
@@ -56,7 +60,7 @@ public class MultiNet{
 		clustering = new double[numTransitions][numSubjects][numClusters];
 		
 		for(int i = 0; i < numClusters; i++) {
-			s = new Scores(o, this.maxParents, true, true);
+			s = new Scores(o, this.maxParents, stationaryProcess, true, multithread);
 			s.evaluate(new RandomScoringFunction());
 			
 			if(this.is_bcDBN) {
@@ -71,7 +75,7 @@ public class MultiNet{
 			dbn.generateParameters();
 			networks.add(dbn);
 		}
- 		clustering = computeClusters(networks, true, false);
+ 		clustering = computeClusters(networks, stationaryProcess, false);
 	}
 	
 	private double[][][] computeClusters(List<DynamicBayesNet> net, boolean stationaryProcess, boolean mostProbable) {
@@ -228,7 +232,7 @@ public class MultiNet{
 		for(int c = 0; c < numClusters; c++) {
 			clust = selectCluster(counts, c);
 			oNew = new Observations(attributes, obs, clust);
-			s =  new Scores(oNew, this.maxParents, true, true);
+			s =  new Scores(oNew, this.maxParents, this.stationaryProcess, false, this.multithread);
 			s.evaluate(new LLScoringFunction());
 			if(this.is_bcDBN) {
 				dbn=s.to_bcDBN(new LLScoringFunction(), this.intra_ind);
@@ -238,7 +242,7 @@ public class MultiNet{
 			}else {;
 				dbn = s.toDBN(this.root, this.spanning);
 			}
-			dbn.learnParameters(oNew, true);
+			dbn.learnParameters(oNew, this.stationaryProcess);
 			networksNew.add(dbn);
 		}
 		return networksNew;	
@@ -249,7 +253,7 @@ public class MultiNet{
 		List<DynamicBayesNet> networkPrev = networks;
 		List<DynamicBayesNet> networkNew = networks;
 		double[][][] counts = clustering;
-		double score = getScore(networkNew, counts);
+		double score = getScore(networkNew, counts, this.stationaryProcess);
 		double score_prev = Double.NEGATIVE_INFINITY;
 		boolean mostprobable = false;
 		int it = 0;
@@ -267,10 +271,10 @@ public class MultiNet{
 			networkPrev = networkNew;
 			score_prev = score;
 			networkNew = trainNetworks(counts);
-			counts = computeClusters(networkNew, true, mostprobable);
-			score = getScore(networkNew, counts);
+			counts = computeClusters(networkNew, this.stationaryProcess, mostprobable);
+			score = getScore(networkNew, counts, this.stationaryProcess);
 			it += 1;
-			//System.out.println("Score: " + score);
+//			System.out.println("Score: " + score  + " it: " + it);
 		}
 		this.networks = networkPrev;
 		this.clustering = computeClusters(networkPrev, true, false);
@@ -289,7 +293,7 @@ public class MultiNet{
 		for(DynamicBayesNet dbn : this.networks) {
 			clust = selectCluster(this.clustering, c);
 			oNew = new Observations(attributes, obs, clust);
-			score += 2*dbn.getScore(oNew, new LLScoringFunction(), true);
+			score += 2*dbn.getScore(oNew, new LLScoringFunction(), this.stationaryProcess);
 			numParam += dbn.getNumberParameters(oNew);
 			c += 1;
 		}
@@ -299,7 +303,7 @@ public class MultiNet{
 		return score;
 	}
 	
-	public double getScore(List<DynamicBayesNet> net, double[][][] clustering){
+	public double getScore(List<DynamicBayesNet> net, double[][][] clustering,  boolean stationaryProcess){
 		Observations oNew;
 		int numSubjects = o.getNumSubjects();
 		int[][][] obs = o.getObservationsMatrix();
@@ -316,7 +320,7 @@ public class MultiNet{
 		for(DynamicBayesNet dbn : net) {
 			clust = selectCluster(clustering, c);
 			oNew = new Observations(attributes, obs, clust);
-			netscore1 += dbn.getScore(oNew, new LLScoringFunction(), true);
+			netscore1 += dbn.getScore(oNew, new LLScoringFunction(), stationaryProcess);
 			c += 1;
 		}
 		

@@ -119,6 +119,10 @@ public class learnDBN{
 						.longOpt("impute")
 						.desc("If the file has missing values impute these values. The resulting data with imputed values is saved in the same folder with <filename>_imputed.csv")
 						.build();
+				Option mt= Option.builder("mt")
+						.longOpt("MultiThread")
+						.desc("Learns the DBN using parallel computations.")
+						.build();
 
 				options.addOption(inputFile);
 				options.addOption(numParents);
@@ -135,6 +139,7 @@ public class learnDBN{
 				options.addOption(cDBN);
 				options.addOption(intra_in);
 				options.addOption(impute);
+				options.addOption(mt);
 
 				CommandLineParser parser = new DefaultParser();
 				
@@ -149,13 +154,14 @@ public class learnDBN{
 					boolean is_cDBN = cmd.hasOption("cDBN");
 					int intra_ind = Integer.parseInt(cmd.getOptionValue("ind","2"));
 					boolean imputation = cmd.hasOption("imp");
+					boolean multithread = cmd.hasOption("mt");
 
 					// TODO: check sanity
 					int markovLag = Integer.parseInt(cmd.getOptionValue("m", "1"));
 					int root = Integer.parseInt(cmd.getOptionValue("r", "-1"));
 
 					Observations o = new Observations(cmd.getOptionValue("i"), markovLag);
-					Scores s = new Scores(o, Integer.parseInt(cmd.getOptionValue("p")), stationary, verbose);
+					Scores s = new Scores(o, Integer.parseInt(cmd.getOptionValue("p")), stationary, verbose, multithread);
 					double score;
 					double scorePrev;
 					Scores sNew;
@@ -198,7 +204,7 @@ public class learnDBN{
 							dbn = dbn.parameterEM(o, true);
 							oNew = o.fillMissingValues(dbn, true);
 							scorePrev = dbn.getScore(oNew, sf, true);
-							sNew = new Scores(oNew, 1, true, true);
+							sNew = new Scores(oNew, Integer.parseInt(cmd.getOptionValue("p")), stationary, verbose, multithread);
 							sNew.evaluate(sf);
 							
 							if(is_bcDBN) {

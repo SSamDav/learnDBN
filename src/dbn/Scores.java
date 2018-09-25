@@ -6,9 +6,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import utils.Edge;
+import utils.ScoreCalculationThread;
 import utils.Utils;
 
 public class Scores {
+	
+	private boolean multithread;
 
 	private Observations observations;
 
@@ -64,12 +67,16 @@ public class Scores {
 	public Scores(Observations observations, int maxParents) {
 		this(observations, maxParents, true, true);
 	}
-
 	public Scores(Observations observations, int maxParents, boolean stationaryProcess, boolean verbose) {
+		this(observations, maxParents, stationaryProcess, verbose, false);
+	}
+
+	public Scores(Observations observations, int maxParents, boolean stationaryProcess, boolean verbose, boolean multithread) {
 		this.observations = observations;
 		this.maxParents = maxParents;
 		this.stationaryProcess = stationaryProcess;
 		this.verbose = verbose;
+		this.multithread = multithread;
 
 		int n = this.observations.numAttributes();
 		int p = this.maxParents;
@@ -133,59 +140,89 @@ public class Scores {
 
 		int[] numBestScoresPast = new int[n];
 		int[][] numBestScores = new int[n][n];
+		
+		
+		int cores = Runtime.getRuntime().availableProcessors();
+		int aux_sum = (int) Math.ceil(n/(double) cores);
+		ScoreCalculationThread [] Threads = new ScoreCalculationThread[cores];
 
 		for (int t = 0; t < numTransitions; t++) {
 			// System.out.println("evaluating score in transition " + t + "/" +
 			// numTransitions);
-			for (int i = 0; i < n; i++) {
-				// System.out.println("evaluating node " + i + "/" + n);
-				double bestScore = Double.NEGATIVE_INFINITY;
-		
-				
-				for (List<Integer> parentSet : parentSets) {
-					double score = stationaryProcess ? sf.evaluate(observations, parentSet, i) : sf.evaluate(
-							observations, t, parentSet, i);
-					// System.out.println("Xi:" + i + " ps:" + parentSet +
-					// " score:" + score);
-					if (bestScore < score) {
-						bestScore = score;
-						parentNodesPast.get(t).set(i, parentSet);
-						numBestScoresPast[i] = 1;
-					} else if (bestScore == score)
-						numBestScoresPast[i]++;
-				}
-				
-				
-				//System.out.println("Finished parents past");
+			if(!multithread) {
+				for (int i = 0; i < n; i++) {
+//					// System.out.println("evaluating node " + i + "/" + n);
+					double bestScore = Double.NEGATIVE_INFINITY;
 			
-				for (int j = 0; j < n; j++) {
-					scoresMatrix[t][i][j] = -bestScore;
+					
+					for (List<Integer> parentSet : parentSets) {
+						double score = stationaryProcess ? sf.evaluate(observations, parentSet, i) : sf.evaluate(
+								observations, t, parentSet, i);
+						// System.out.println("Xi:" + i + " ps:" + parentSet +
+						// " score:" + score);
+						if (bestScore < score) {
+							bestScore = score;
+							parentNodesPast.get(t).set(i, parentSet);
+							numBestScoresPast[i] = 1;
+						} else if (bestScore == score)
+							numBestScoresPast[i]++;
+					}
+					
+					
+					//System.out.println("Finished parents past");
+				
+					for (int j = 0; j < n; j++) {
+						scoresMatrix[t][i][j] = -bestScore;
+					}
 				}
-			}
-
-			for (int i = 0; i < n; i++) {
-				for (int j = 0; j < n; j++) {
-					if (i != j) {
-						double bestScore = Double.NEGATIVE_INFINITY;
-						for (List<Integer> parentSet : parentSets) {
-							double score = stationaryProcess ? sf.evaluate(observations, parentSet, j, i) : sf
-									.evaluate(observations, t, parentSet, j, i);
-							// System.out.println("Xi:" + i + " Xj:" + j +
-							// " ps:" + parentSet + " score:" + score);
-							if (bestScore < score) {
-								bestScore = score;
-								parentNodes.get(t).get(i).set(j, parentSet);
-								numBestScores[i][j] = 1;
-							} else if (bestScore == score)
-								numBestScores[i][j]++;
+				for (int i = 0; i < n; i++) {
+					for (int j = 0; j < n; j++) {
+						if (i != j) {
+							double bestScore = Double.NEGATIVE_INFINITY;
+							for (List<Integer> parentSet : parentSets) {
+								double score = stationaryProcess ? sf.evaluate(observations, parentSet, j, i) : sf
+										.evaluate(observations, t, parentSet, j, i);
+								// System.out.println("Xi:" + i + " Xj:" + j +
+								// " ps:" + parentSet + " score:" + score);
+								if (bestScore < score) {
+									bestScore = score;
+									parentNodes.get(t).get(i).set(j, parentSet);
+									numBestScores[i][j] = 1;
+								} else if (bestScore == score)
+									numBestScores[i][j]++;
+							}
+	
+							scoresMatrix[t][i][j] += bestScore;
+	
 						}
-
-						scoresMatrix[t][i][j] += bestScore;
-
+					}
+				}
+			}else{
+				int aux = 0;
+				for(int i = 0; i < n ; i = i + aux_sum) {
+					int auxsum = i+aux_sum;
+					if(auxsum > n) {
+						auxsum = n;
+					}
+					Threads[aux] = new ScoreCalculationThread( t, i,auxsum, n, parentSets,
+							observations, scoresMatrix, parentNodesPast,
+							parentNodes,  numBestScores, numBestScoresPast,
+							sf, stationaryProcess);
+					Threads[aux].start();
+					aux++;
+				}
+				for(int i = 0; i < aux; i++) {
+					try {
+						Threads[i].join();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 				}
 			}
-
+//			for(int i = 0; i < n; i++) {
+//				System.out.println(Arrays.toString(scoresMatrix[t][i]));
+//			}
 			if (verbose) {
 				// System.out.println(Arrays.toString(numBestScoresPast));
 				// System.out.println(Arrays.deepToString(numBestScores));

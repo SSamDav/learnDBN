@@ -117,6 +117,10 @@ public class learnDBM{
 				.hasArg()
 				.argName("int")
 				.build();
+		Option mt= Option.builder("mt")
+				.longOpt("MultiThread")
+				.desc("Learns the DBN using parallel computations.")
+				.build();
 		
 		options.addOption(inputFile);
 		options.addOption(numCluster);
@@ -133,6 +137,7 @@ public class learnDBM{
 		options.addOption(bcDBN);
 		options.addOption(cDBN);
 		options.addOption(intra_in);
+		options.addOption(mt);
 		
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd;
@@ -147,13 +152,14 @@ public class learnDBM{
 			int intra_ind = Integer.parseInt(cmd.getOptionValue("ind","2"));
 			int numClust = Integer.parseInt(cmd.getOptionValue("k"));
 			int maxParents = Integer.parseInt(cmd.getOptionValue("p","1"));
+			boolean multithread = cmd.hasOption("mt");
 			
 			// TODO: check sanity
 			int markovLag = Integer.parseInt(cmd.getOptionValue("m", "1"));
 			int root = Integer.parseInt(cmd.getOptionValue("r", "-1"));
 			
 			Observations o = new Observations(cmd.getOptionValue("i"), markovLag);
-			MultiNet m = new MultiNet(o, numClust, is_bcDBN, is_cDBN, spanning, intra_ind, root, maxParents);
+			MultiNet m = new MultiNet(o, numClust, is_bcDBN, is_cDBN, spanning, intra_ind, root, maxParents, stationary, multithread);
 			m.clust();
 			
 			if(cmd.hasOption("o")) {
