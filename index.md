@@ -139,7 +139,85 @@ A very simplistic input file example is the following:
 
 The first example considers a synthetic network structure with 5 attributes, each one taking 4 states and one parent from the preceding slice ([t] denotes the time slice):
 
+![Example 1 ori](./exmp1_ori.png)
+
+The above network was sample with produce the following file:
+*   [exmp1.csv](./exmp1.csv), with 1000 observations with 5 time steps, 20% of missing values, 20% of observations with missing values
+
+As all nodes have exactly one parent from the past, the best options are to limit the number of parents with -p 1.
+
+The command to learn the network and impute the missing values is:
+```shell
+java -jar learnDBN.jar -i exmp1.csv -p 1 -imp -mt
+```
+
+which produces the following output:
+```
+Evaluating network with MDL score.
+Found missing values in data.
+Parameter EM step: 1 score: -32184.7968939429
+Parameter EM step: 2 score: -32116.81895576152
+Parameter EM step: 3 score: -32115.385956588492
+Parameter EM step: 4 score: -32115.342586060127
+Parameter EM step: 5 score: -32115.34083770815
+Parameter EM step: 6 score: -32115.340752037384
+Parameter EM step: 7 score: -32115.34074725887
+Parameter EM step: 8 score: -32115.3407469682
+Parameter EM step: 9 score: -32115.340746949463
+Parameter EM step: 10 score: -32115.3407469482
+Parameter EM step: 11 score: -32115.340746948117
+Parameter EM step: 12 score: -32115.340746948106
+Parameter EM step: 13 score: -32115.340746948103
+Parameter EM step: 14 score: -32115.340746948103
+Strutural EM step: 1
+Parameter EM step: 1 score: -27336.936378385602
+Parameter EM step: 2 score: -27015.449042522705
+Parameter EM step: 3 score: -27009.25438525708
+Parameter EM step: 4 score: -27009.088509908135
+Parameter EM step: 5 score: -27009.082936546387
+Parameter EM step: 6 score: -27009.082723151798
+Parameter EM step: 7 score: -27009.08271432131
+Parameter EM step: 8 score: -27009.082713937845
+Parameter EM step: 9 score: -27009.082713920747
+Parameter EM step: 10 score: -27009.082713919976
+Parameter EM step: 11 score: -27009.082713919954
+Parameter EM step: 12 score: -27009.082713919946
+Parameter EM step: 13 score: -27009.082713919946
+Strutural EM step: 2
+
+-----------------
+
+X2[0] -> X1[1]
+X4[0] -> X2[1]
+X1[0] -> X3[1]
+X5[0] -> X4[1]
+X1[0] -> X5[1]
+
+X2[1] -> X1[1]
+X5[1] -> X2[1]
+X1[1] -> X3[1]
+X1[1] -> X4[1]
+```
+
+Activating the -d switch to directly output in dot format, in order to this functionality to work you need to install [Graphviz](http://www.graphviz.org/) in the following directory:
+*   **Windows**: C:\Program Files (x86)\Graphviz2.38
+*   **Mac**: /usr/local/bin/dot
+*   **Linux**: /usr/bin/dot
+However you can change this directory by editing the GraphViz.java file and then compile the program.
+
+So running the following command:
+´´´shell
+java -jar learnDBN.jar -i exmp1.csv -p 1 -imp -mt -d 
+´´´
+
+Produces this graph:
 ![Example 1](./exmp1.png)
+
+
+## Example 2
+
+
+
 
 Text can be **bold**, _italic_, or ~~strikethrough~~.
 
