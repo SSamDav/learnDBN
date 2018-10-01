@@ -18,7 +18,7 @@ All of these programs comes packaged as an executable JAR file, already includin
 
 # Usage
 
-# learnDBN
+## learnDBN
 By executing the jar file ...
 
 ```shell
@@ -133,7 +133,13 @@ A very simplistic input file example is the following:
 "11","?","20.0","5.0","?","20.0","5.0","4.0","20.0","9.0"
 "12","4.0","20.0","5.0","7.0","20.0","5.0","4.0","20.0","9.0"
 ```
+# Examples 
 
+## Example #1
+
+The first example considers a synthetic network structure with 5 attributes, each one taking 4 states and one parent from the preceding slice ([t] denotes the time slice):
+
+![Example 1](./exmp1.png)
 
 Text can be **bold**, _italic_, or ~~strikethrough~~.
 
