@@ -2,6 +2,137 @@
 layout: default
 ---
 
+#Program description
+
+learnDBN is Java implementation of a Dynamic Bayesian Network (DBN) structure learning algorithm. It can learn tDBN, cDBN and bcDBN structures from a file with multivariate longitudinal observations. Also, it improves these algorithms by allowing the data to have missing values. As such this implementation can impute missing values. Moreover, it has the capability of learning a Dynamic Bayesian Multinet (DBM) which is an extension of a Bayesian Multinet. By using the DBM model this implementation has the capability of performing clustering on the data.
+
+#Current release
+
+Because this implimentation has two different objective there is two different programs.
+
+*   The learnDBN that learns DBNs from data with missing values and then impute that values, can be downloaded here. 
+*   The learnDBM that learns a DBM from the data and then outputs the clustering result, can be downloaded here.
+
+All of these programs comes packaged as an executable JAR file, already including the required external libraries.
+
+
+#Usage
+
+#learnDBN
+By executing the jar file ...
+
+```shell
+$ java -jar learnDBN.jar 
+```
+... the available command-line options are shown:
+
+```
+usage: learnDBN
+ -bcDBN,--bcDBN               Learns a bcDBN structure.
+ -c,--compact                 Outputs network in compact format, omitting
+                              intra-slice edges. Only works if specified
+                              together with -d and with --markovLag 1.
+ -cDBN,--cDBN                 Learns a cDBN structure.
+ -d,--dotFormat               Outputs network in dot format, allowing
+                              direct redirection into Graphviz to
+                              visualize the graph.
+ -i,--file <file>             Input CSV file to be used for network
+                              learning.
+ -imp,--impute                If the file has missing values impute these
+                              values. The resulting data with imputed
+                              values is saved in the same folder with
+                              <filename>_imputed.csv
+ -ind,--intra_in <int>        In-degree of the intra-slice network
+ -m,--markovLag <int>         Maximum Markov lag to be considered, which
+                              is the longest distance between connected
+                              time-slices. Default is 1, allowing edges
+                              from one preceding slice.
+ -mt,--MultiThread            Learns the DBN using parallel computations.
+ -ns,--nonStationary          Learns a non-stationary network (one
+                              transition network per time transition). By
+                              default, a stationary DBN is learnt.
+ -o,--outputFile <file>       Writes output to <file>. If not supplied,
+                              output is written to terminal.
+ -p,--numParents <int>        Maximum number of parents from preceding
+                              time-slice(s).
+ -pm,--parameters             Learns and outputs the network parameters.
+ -r,--root <int>              Root node of the intra-slice tree. By
+                              default, root is arbitrary.
+ -s,--scoringFunction <arg>   Scoring function to be used, either MDL or
+                              LL. MDL is used by default.
+ -sp,--spanning               Forces intra-slice connectivity to be a tree
+                              instead of a forest, eventually producing a
+                              structure with a lower score.
+```
+##learnDBM
+By executing the jar file ...
+
+```shell
+$ java -jar learnDBM.jar 
+```
+... the available command-line options are shown:
+
+```
+usage: learnDBM
+ -bcDBN,--bcDBN               Learns a bcDBN structure.
+ -c,--compact                 Outputs network in compact format, omitting
+                              intra-slice edges. Only works if specified
+                              together with -d and with --markovLag 1.
+ -cDBN,--cDBN                 Learns a cDBN structure.
+ -d,--dotFormat               Outputs network in dot format, allowing
+                              direct redirection into Graphviz to
+                              visualize the graph.
+ -i,--file <file>             Input CSV file to be used for network
+                              learning.
+ -ind,--intra_in <int>        In-degree of the intra-slice network
+ -k,--numClusters <int>       Number of cluster in data.
+ -m,--markovLag <int>         Maximum Markov lag to be considered, which
+                              is the longest distance between connected
+                              time-slices. Default is 1, allowing edges
+                              from one preceding slice.
+ -mt,--MultiThread            Learns the DBN using parallel computations.
+ -ns,--nonStationary          Learns a non-stationary network (one
+                              transition network per time transition). By
+                              default, a stationary DBN is learnt.
+ -o,--outputFile <file>       Writes output to <file>. If not supplied,
+                              output is written to terminal.
+ -p,--numParents <int>        Maximum number of parents from preceding
+                              time-slice(s). The default values is 1.
+ -pm,--parameters             Learns and outputs the network parameters.
+ -r,--root <int>              Root node of the intra-slice tree. By
+                              default, root is arbitrary.
+ -s,--scoringFunction <arg>   Scoring function to be used, either MDL or
+                              LL. MDL is used by default.
+ -sp,--spanning               Forces intra-slice connectivity to be a tree
+                              instead of a forest, eventually producing a
+                              structure with a lower score.
+```
+
+
+#Input file format
+
+The input file should be in comma-separated values (CSV) format.
+
+*   The first line is the header, naming the attributes and specifying the time slice index, separared by two underscores: "attributeName__t"
+*   The order of the attributes must be maintained: "X1__1", "X2__1", "X1__2", "X2__2".
+*   The first column contains an identification (string or number) of each subject (this identifier does not affect the learnt network).
+*   All other lines correspond to observations of an individual over time.
+*   Missing values can be marked as "?" but should not occur, as the algorithm discards the observation (time slice) in question.
+
+A very simplistic input file example is the following:
+
+```
+"subject_id","X1__0","X2__0","X3__0","X1__1","X2__1","X3__1","X1__2","X2__2","X3__2"
+"6","7.0","40.0","5.0","7.0","20.0","5.0","4.0","20.0","5.0"
+"7","4.0","40.0","5.0","7.0","40.0","5.0","7.0","40.0","5.0"
+"8","7.0","20.0","5.0","7.0","40.0","5.0","4.0","20.0","9.0"
+"9","7.0","40.0","9.0","7.0","20.0","5.0","7.0","40.0","?"
+"10","7.0","20.0","5.0","4.0","20.0","9.0","7.0","20.0","9.0"
+"11","?","20.0","5.0","?","20.0","5.0","4.0","20.0","9.0"
+"12","4.0","20.0","5.0","7.0","20.0","5.0","4.0","20.0","9.0"
+```
+
+
 Text can be **bold**, _italic_, or ~~strikethrough~~.
 
 [Link to another page](./another-page.html).
