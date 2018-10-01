@@ -275,7 +275,7 @@ The flag -d produces the following:
 ![](./exmp2_net[0].png "Output DBN 1")  ![](./exmp2_net[1].png "Output DBN 2")
 
 
-The clustering output has the following Cluster Vality Indexes (CVIs):
+The clustering output has the following Cluster Validity Indexes (CVIs):
 
 | CVI   | Score       |
 |:------|:------------|
