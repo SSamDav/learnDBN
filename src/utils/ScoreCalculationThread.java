@@ -13,12 +13,12 @@ public class ScoreCalculationThread extends Thread{
 	private Observations observations;
 	private double[][][] scoresMatrix;
 	private List<List<List<Integer>>> parentNodesPast;
-	List<List<List<List<Integer>>>> parentNodes;
-	int[][] numBestScores;
-	int[] numBestScoresPast;
+	private List<List<List<List<Integer>>>> parentNodes;
+	private int[][] numBestScores;
+	private int[] numBestScoresPast;
 	private int n;
-	ScoringFunction sf;
-	Boolean stationaryProcess;
+	private ScoringFunction sf;
+	private Boolean stationaryProcess;
 	
 	
 	
