@@ -2,11 +2,11 @@
 layout: default
 ---
 
-#Program description
+# Program description
 
 learnDBN is Java implementation of a Dynamic Bayesian Network (DBN) structure learning algorithm. It can learn tDBN, cDBN and bcDBN structures from a file with multivariate longitudinal observations. Also, it improves these algorithms by allowing the data to have missing values. As such this implementation can impute missing values. Moreover, it has the capability of learning a Dynamic Bayesian Multinet (DBM) which is an extension of a Bayesian Multinet. By using the DBM model this implementation has the capability of performing clustering on the data.
 
-#Current release
+# Current release
 
 Because this implimentation has two different objective there is two different programs.
 
@@ -16,9 +16,9 @@ Because this implimentation has two different objective there is two different p
 All of these programs comes packaged as an executable JAR file, already including the required external libraries.
 
 
-#Usage
+# Usage
 
-#learnDBN
+# learnDBN
 By executing the jar file ...
 
 ```shell
@@ -64,7 +64,9 @@ usage: learnDBN
                               instead of a forest, eventually producing a
                               structure with a lower score.
 ```
-##learnDBM
+
+
+## learnDBM
 By executing the jar file ...
 
 ```shell
@@ -109,7 +111,7 @@ usage: learnDBM
 ```
 
 
-#Input file format
+# Input file format
 
 The input file should be in comma-separated values (CSV) format.
 
