@@ -1,6 +1,6 @@
-title: learnDBM
+title: learnDBN
 logo: 
-description: A Java implementation for learning Dynamic Bayesian Multinets.
+description: A Java implementation for learning Dynamic Bayesian Networks.
 show_downloads: true
 google_analytics:
 theme: jekyll-theme-minimal
