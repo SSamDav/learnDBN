@@ -14,7 +14,6 @@ This is the first implementation of this program. It comes packaged as an execut
 
 ## Usage
 
-### learnDBN
 By executing the jar file ...
 
 ```shell
@@ -85,9 +84,7 @@ A very simplistic input file example is the following:
 "11","?","20.0","5.0","?","20.0","5.0","4.0","20.0","9.0"
 "12","4.0","20.0","5.0","7.0","20.0","5.0","4.0","20.0","9.0"
 ```
-## Examples 
-
-### Example #1
+## Example
 
 The first example considers a synthetic network structure with 5 attributes, each one taking 4 states and one parent from the preceding slice ([t] denotes the time slice):
 
