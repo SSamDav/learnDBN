@@ -18,13 +18,14 @@ import java.util.Random;
 
 /**
  * Class that describes a Bayesian Network (BN).
+ * 
  * @author josemonteiro
- * @author MargaridanarSousa 
+ * @author MargaridanarSousa
  * @author SSamDav
  *
  */
 public class BayesNet {
-	
+
 	/**
 	 * List of attributes of this BN.
 	 */
@@ -39,14 +40,14 @@ public class BayesNet {
 	 * "raw" (shifted) relations
 	 */
 	private List<List<Integer>> parentNodes;
-	
+
 	/**
 	 * Parameters of a BN (CPT).
 	 */
 	private List<Map<Configuration, List<Double>>> parameters;
 
 	private List<Integer> topologicalOrder;
-	
+
 	/**
 	 * Markov Lag corresponding to this BN.
 	 */
@@ -54,26 +55,29 @@ public class BayesNet {
 
 	// for random sampling
 	private Random r;
-	
-	
+
 	/**
 	 * Getter for the parameters.
-	 * @return List<Map<Configuration, List<Double>>> Returns the parameters of this BN.
+	 * 
+	 * @return List<Map<Configuration, List<Double>>> Returns the parameters of this
+	 *         BN.
 	 */
-	public List<Map<Configuration, List<Double>>> getParameters(){	
+	public List<Map<Configuration, List<Double>>> getParameters() {
 		return parameters;
-	}	
-	
+	}
+
 	/**
 	 * Getter for the topological order.
+	 * 
 	 * @return List<Integer> Returns the topological order of the BN.
 	 */
 	public List<Integer> getTop() {
 		return topologicalOrder;
 	}
-	
+
 	/**
 	 * Getter of the parent nodes.
+	 * 
 	 * @return List<List<Integer>> Returns the list of parents nodes of the BN.
 	 */
 	public List<List<Integer>> getParents() {
@@ -104,14 +108,16 @@ public class BayesNet {
 	}
 
 	/**
-	 * Constructor of a Bayesian Network.
-	 * The edge heads are already unshifted (i.e., in the interval [0, n[).
-	 * @param attributes Attributes of the BN.
-	 * @param markovLag Markov lag corresponding to the BN.
-	 * @param intraRelations Intra-Relations between the attributes of this BN.
-	 * 		  The edge tails are unshifted.
-	 * @param interRelations Inter-Relations between the attributes of this BN.
-	 * 		  The edge tails are shifted in Configuration style (i.e, [0, markovLag*n[).	
+	 * Constructor of a Bayesian Network. The edge heads are already unshifted
+	 * (i.e., in the interval [0, n[).
+	 * 
+	 * @param attributes     Attributes of the BN.
+	 * @param markovLag      Markov lag corresponding to the BN.
+	 * @param intraRelations Intra-Relations between the attributes of this BN. The
+	 *                       edge tails are unshifted.
+	 * @param interRelations Inter-Relations between the attributes of this BN. The
+	 *                       edge tails are shifted in Configuration style (i.e, [0,
+	 *                       markovLag*n[).
 	 * @param r
 	 */
 	public BayesNet(List<Attribute> attributes, int markovLag, List<Edge> intraRelations, List<Edge> interRelations,
@@ -174,7 +180,7 @@ public class BayesNet {
 		// obtain nodes by topological order
 		topologicalOrder = Utils.topologicalSort(childNodes);
 	}
-	
+
 	/**
 	 * Function that generate the parameters of a given BN.
 	 */
@@ -205,23 +211,25 @@ public class BayesNet {
 
 	/**
 	 * Learns the parameters of a stationary BN.
+	 * 
 	 * @param o Observations
 	 */
 	public void learnParameters(Observations o) {
 		learnParameters(o, -1);
 	}
-	
+
 	/**
 	 * Learns the parameters of an BN.
-	 * @param o Observations
+	 * 
+	 * @param o          Observations
 	 * @param transition of the BN.
 	 * @return String Corresponding to the learnt CPT.
 	 */
 	public String learnParameters(Observations o, int transition) {
-		
+
 		if (!o.getAttributes().equals(this.attributes)) {
-			throw new IllegalArgumentException("Attributes of the observations don't"
-					+ "match the attributes of the BN");
+			throw new IllegalArgumentException(
+					"Attributes of the observations don't" + "match the attributes of the BN");
 		}
 
 		int n = attributes.size();
@@ -231,8 +239,7 @@ public class BayesNet {
 		for (int i = 0; i < n; i++) {
 
 			LocalConfiguration c = new LocalConfiguration(attributes, markovLag, parentNodes.get(i), i);
-			
-			
+
 			int parentsRange = c.getParentsRange();
 
 			// node i has no parents
@@ -293,31 +300,33 @@ public class BayesNet {
 		return sb.toString();
 
 	}
-	
+
 	/**
-	 * Function that for a given configuration and for a given node calculates the probability of that observation.
-	 * @param node Node where we want to calculate the probability.
+	 * Function that for a given configuration and for a given node calculates the
+	 * probability of that observation.
+	 * 
+	 * @param node   Node where we want to calculate the probability.
 	 * @param config Configuration of the observation.
 	 * @return List<Double> Returns the probability.
 	 */
-	public List<Double> getParameters(int node, int[] config){
+	public List<Double> getParameters(int node, int[] config) {
 		double prob = 0;
 		List<Double> aux = new ArrayList<Double>();
-		int node_aux = attributes.size()*markovLag + node;
+		int node_aux = attributes.size() * markovLag + node;
 		MutableConfiguration c = new MutableConfiguration(attributes, markovLag, config);
 		Configuration indexParameters = c.applyMask(parentNodes.get(node), node);
-		if(parameters.get(node).get(indexParameters).size()-1 < config[node_aux]) {
-			for(int i = 0; i < attributes.get(node).size() - 1; i++) {
-				prob +=  parameters.get(node).get(indexParameters).get(i);
+		if (parameters.get(node).get(indexParameters).size() - 1 < config[node_aux]) {
+			for (int i = 0; i < attributes.get(node).size() - 1; i++) {
+				prob += parameters.get(node).get(indexParameters).get(i);
 			}
 			prob = 1 - prob;
 			aux.add(prob);
-		}else {		
+		} else {
 			prob = parameters.get(node).get(indexParameters).get(config[node_aux]);
 			aux.add(prob);
 		}
 //		System.out.println(" Prob: " + prob);
-		return aux;	
+		return aux;
 	}
 
 	private List<Double> generateProbabilities(int numValues) {
@@ -341,9 +350,9 @@ public class BayesNet {
 			for (int j = 0; j < numValues - 1; j++) {
 				probabilities.add(values.get(j + 1) - values.get(j));
 			}
-		} else if(numValues == 2) {
+		} else if (numValues == 2) {
 			probabilities = Arrays.asList(r.nextDouble());
-		}else {
+		} else {
 			probabilities = Arrays.asList(1.0);
 		}
 		return probabilities;
@@ -351,14 +360,15 @@ public class BayesNet {
 
 	/**
 	 * Calculates what is the next observation.
+	 * 
 	 * @param previousObservation Previous Observation.
-	 * @param mostProbable If true assigns the most probable values
+	 * @param mostProbable        If true assigns the most probable values
 	 * @return int[] Returns the next observation.
 	 */
 	public int[] nextObservation(int[] previousObservation, boolean mostProbable) {
 		MutableConfiguration c = new MutableConfiguration(attributes, markovLag, previousObservation);
 		for (int node : topologicalOrder) {
-		
+
 //			System.out.println("Node: " + node + " parents: " + parentNodes.get(node));
 //			System.out.println("previousOBS: " + Arrays.toString(previousObservation));
 //			System.out.println("Teste: " + Arrays.toString(c.configuration) );
@@ -368,10 +378,9 @@ public class BayesNet {
 //			System.out.println("indexParameters "+ Arrays.toString(indexParameters.configuration));
 //			System.out.println("probabilities "+probabilities);
 //			
-			//System.out.println("Observation "+Arrays.toString(previousObservation));
-			//System.out.println("Attributes "+attributes);
-			
-			
+			// System.out.println("Observation "+Arrays.toString(previousObservation));
+			// System.out.println("Attributes "+attributes);
+
 			int size = probabilities.size();
 			int value;
 
@@ -419,13 +428,14 @@ public class BayesNet {
 	}
 
 	/**
-	 * Compares a network that was learned from observations (recovered) with
-	 * the original network used to generate those observations. 
+	 * Compares a network that was learned from observations (recovered) with the
+	 * original network used to generate those observations.
 	 * 
-	 * @param original The original BN.
+	 * @param original  The original BN.
 	 * @param recovered The recovered BN.
-	 * @param verbose If set, prints net comparison.
-	 * @return int[] Returns the precision, recall and f1 scores in the format [precision, recall, f1].
+	 * @param verbose   If set, prints net comparison.
+	 * @return int[] Returns the precision, recall and f1 scores in the format
+	 *         [precision, recall, f1].
 	 */
 	public static double[] compare(BayesNet original, BayesNet recovered, boolean verbose) {
 		// intra edges only, assume graph is a tree
@@ -478,13 +488,12 @@ public class BayesNet {
 			System.out.println("Recall  = " + recall);
 			System.out.println("F1 = " + f1);
 		}
-		//{ truePositive, conditionPositive, testPositive };
+		// { truePositive, conditionPositive, testPositive };
 
-		return new double[] {precision,recall,f1};
+		return new double[] { precision, recall, f1 };
 
 	}
 
-	
 	public int getMarkovLag() {
 		return markovLag;
 	}
