@@ -10,7 +10,7 @@ import utils.ScoreCalculationThread;
 import utils.Utils;
 
 public class Scores {
-	
+
 	private boolean multithread;
 
 	private Observations observations;
@@ -41,8 +41,8 @@ public class Scores {
 	private int maxParents;
 
 	/**
-	 * A list of all possible sets of parent nodes. Set cardinality lies within
-	 * the range [1, maxParents].
+	 * A list of all possible sets of parent nodes. Set cardinality lies within the
+	 * range [1, maxParents].
 	 */
 	private List<List<Integer>> parentSets;
 
@@ -54,24 +54,23 @@ public class Scores {
 	private boolean evaluated = false;
 
 	private boolean verbose;
-	
-	
+
 	private List<List<Integer>> ancestors;
-	
-	
+
 	private List<List<Integer>> PastParents;
 
-	
 	private List<List<Integer>> PresentParents;
-	
+
 	public Scores(Observations observations, int maxParents) {
 		this(observations, maxParents, true, true);
 	}
+
 	public Scores(Observations observations, int maxParents, boolean stationaryProcess, boolean verbose) {
 		this(observations, maxParents, stationaryProcess, verbose, false);
 	}
 
-	public Scores(Observations observations, int maxParents, boolean stationaryProcess, boolean verbose, boolean multithread) {
+	public Scores(Observations observations, int maxParents, boolean stationaryProcess, boolean verbose,
+			boolean multithread) {
 		this.observations = observations;
 		this.maxParents = maxParents;
 		this.stationaryProcess = stationaryProcess;
@@ -82,16 +81,15 @@ public class Scores {
 		int p = this.maxParents;
 		int markovLag = observations.getMarkovLag();
 
-		// calculat sum_i=1^k nCi
+		// calculate sum_i=1^k nCi
 		int size = n * markovLag;
 		for (int previous = n, i = 2; i <= p; i++) {
 			int current = previous * (n - i + 1) / i;
 			size += current;
 			previous = current;
 		}
-		size+=1; // To count with the empty set!
-		
-		
+		size += 1; // To count with the empty set!
+
 		// TODO: check for size overflow
 
 		// generate parents sets
@@ -99,7 +97,7 @@ public class Scores {
 		for (int i = 1; i <= p; i++) {
 			generateCombinations(n * markovLag, i);
 		}
-		
+
 		parentSets.add(new ArrayList<Integer>());
 
 		int numTransitions = stationaryProcess ? 1 : observations.numTransitions();
@@ -130,7 +128,6 @@ public class Scores {
 		// allocate scoresMatrix
 		scoresMatrix = new double[numTransitions][n][n];
 
-
 	}
 
 	public Scores evaluate(ScoringFunction sf) {
@@ -140,26 +137,22 @@ public class Scores {
 
 		int[] numBestScoresPast = new int[n];
 		int[][] numBestScores = new int[n][n];
-		
-		
+
 		int cores = Runtime.getRuntime().availableProcessors();
-		int aux_sum = (int) Math.ceil(n/(double) cores);
-		ScoreCalculationThread [] Threads = new ScoreCalculationThread[cores];
+		int aux_sum = (int) Math.ceil(n / (double) cores);
+		ScoreCalculationThread[] Threads = new ScoreCalculationThread[cores];
 
 		for (int t = 0; t < numTransitions; t++) {
-			// System.out.println("evaluating score in transition " + t + "/" +
-			// numTransitions);
-			if(!multithread) {
+			//System.out.println("evaluating score in transition " + t + "/" + numTransitions);
+			if (!multithread) {
 				for (int i = 0; i < n; i++) {
 //					// System.out.println("evaluating node " + i + "/" + n);
 					double bestScore = Double.NEGATIVE_INFINITY;
-			
-					
+
 					for (List<Integer> parentSet : parentSets) {
-						double score = stationaryProcess ? sf.evaluate(observations, parentSet, i) : sf.evaluate(
-								observations, t, parentSet, i);
-						// System.out.println("Xi:" + i + " ps:" + parentSet +
-						// " score:" + score);
+						double score = stationaryProcess ? sf.evaluate(observations, parentSet, i)
+								: sf.evaluate(observations, t, parentSet, i);
+						// System.out.println("Xi:" + i + " ps:" + parentSet + " score:" + score);
 						if (bestScore < score) {
 							bestScore = score;
 							parentNodesPast.get(t).set(i, parentSet);
@@ -167,10 +160,7 @@ public class Scores {
 						} else if (bestScore == score)
 							numBestScoresPast[i]++;
 					}
-					
-					
-					//System.out.println("Finished parents past");
-				
+					// System.out.println("Finished parents past");
 					for (int j = 0; j < n; j++) {
 						scoresMatrix[t][i][j] = -bestScore;
 					}
@@ -180,10 +170,9 @@ public class Scores {
 						if (i != j) {
 							double bestScore = Double.NEGATIVE_INFINITY;
 							for (List<Integer> parentSet : parentSets) {
-								double score = stationaryProcess ? sf.evaluate(observations, parentSet, j, i) : sf
-										.evaluate(observations, t, parentSet, j, i);
-								// System.out.println("Xi:" + i + " Xj:" + j +
-								// " ps:" + parentSet + " score:" + score);
+								double score = stationaryProcess ? sf.evaluate(observations, parentSet, j, i)
+										: sf.evaluate(observations, t, parentSet, j, i);
+								// System.out.println("Xi:" + i + " Xj:" + j + " ps:" + parentSet + " score:" + score);
 								if (bestScore < score) {
 									bestScore = score;
 									parentNodes.get(t).get(i).set(j, parentSet);
@@ -191,27 +180,23 @@ public class Scores {
 								} else if (bestScore == score)
 									numBestScores[i][j]++;
 							}
-	
 							scoresMatrix[t][i][j] += bestScore;
-	
 						}
 					}
 				}
-			}else{
+			} else {
 				int aux = 0;
-				for(int i = 0; i < n ; i = i + aux_sum) {
-					int auxsum = i+aux_sum;
-					if(auxsum > n) {
+				for (int i = 0; i < n; i = i + aux_sum) {
+					int auxsum = i + aux_sum;
+					if (auxsum > n) {
 						auxsum = n;
 					}
-					Threads[aux] = new ScoreCalculationThread( t, i,auxsum, n, parentSets,
-							observations, scoresMatrix, parentNodesPast,
-							parentNodes,  numBestScores, numBestScoresPast,
-							sf, stationaryProcess);
+					Threads[aux] = new ScoreCalculationThread(t, i, auxsum, n, parentSets, observations, scoresMatrix,
+							parentNodesPast, parentNodes, numBestScores, numBestScoresPast, sf, stationaryProcess);
 					Threads[aux].start();
 					aux++;
 				}
-				for(int i = 0; i < aux; i++) {
+				for (int i = 0; i < aux; i++) {
 					try {
 						Threads[i].join();
 					} catch (InterruptedException e) {
@@ -220,12 +205,7 @@ public class Scores {
 					}
 				}
 			}
-//			for(int i = 0; i < n; i++) {
-//				System.out.println(Arrays.toString(scoresMatrix[t][i]));
-//			}
 			if (verbose) {
-				// System.out.println(Arrays.toString(numBestScoresPast));
-				// System.out.println(Arrays.deepToString(numBestScores));
 				long numSolutions = 1;
 				for (int i = 0; i < n; i++)
 					numSolutions *= numBestScoresPast[i];
@@ -233,7 +213,8 @@ public class Scores {
 					for (int j = 0; j < n; j++)
 						if (i != j)
 							numSolutions *= numBestScores[i][j];
-				//System.out.println("Number of networks with max score: " + numSolutions);
+
+				System.out.println("Number of networks with max score: " + numSolutions);
 			}
 
 		}
@@ -243,91 +224,71 @@ public class Scores {
 		return this;
 
 	}
-	
-	
-	
-	
-	
-	public List<Integer> Best_Past_Parents(List<Integer> ancestors,int i,int t,ScoringFunction sf){
-		
-		
+
+	public List<Integer> Best_Past_Parents(List<Integer> ancestors, int i, int t, ScoringFunction sf) {
+
 		List<Integer> best_parent_set = new ArrayList<Integer>();
-		double bestScore =Double.NEGATIVE_INFINITY;
-	
+		double bestScore = Double.NEGATIVE_INFINITY;
+
 		for (List<Integer> parentSet : parentSets) {
-			double score = stationaryProcess ? sf.evaluate_2(observations, parentSet, ancestors, i) : sf
-					.evaluate_2(observations, t, parentSet, ancestors, i);
+			double score = stationaryProcess ? sf.evaluate_2(observations, parentSet, ancestors, i)
+					: sf.evaluate_2(observations, t, parentSet, ancestors, i);
 			if (bestScore < score) {
 				bestScore = score;
-				best_parent_set=parentSet;
+				best_parent_set = parentSet;
 			}
-			//System.out.println("Node "+i);
-			//System.out.println("bestScore "+bestScore);
-			
-			double score_empty =stationaryProcess ? sf.evaluate_2(observations, new ArrayList<Integer>(), ancestors, i) : sf
-					.evaluate_2(observations, t, new ArrayList<Integer>(), ancestors, i);
-			//System.out.println("Score empty "+score_empty);
-			
-			//System.out.println("----------------------------------------");
-			
-			if(score_empty>bestScore) {
-				bestScore=score;
-				best_parent_set= new ArrayList<Integer>();
+
+			double score_empty = stationaryProcess ? sf.evaluate_2(observations, new ArrayList<Integer>(), ancestors, i)
+					: sf.evaluate_2(observations, t, new ArrayList<Integer>(), ancestors, i);
+
+
+			if (score_empty > bestScore) {
+				bestScore = score;
+				best_parent_set = new ArrayList<Integer>();
 			}
-			
-			
-			
+
 		}
-		
+
 		return best_parent_set;
 	}
-		
 
-	
 	public double prob() {
-		
-		
+
 		// PARENTS PAST ????????
+
+		int n = observations.numAttributes();
+		int numTransitions = scoresMatrix.length;
 		
-			int n = observations.numAttributes();
-			int numTransitions = scoresMatrix.length;
+		double score = 0;
 
-			int[] numBestScoresPast = new int[n];
-			int[][] numBestScores = new int[n][n];
-			double score = 0;
-	
-			for (int t = 0; t < numTransitions; t++) {
-				// System.out.println("evaluating score in transition " + t + "/" +
-				// numTransitions);
-				for (int i = 0; i < n; i++) {
-					// System.out.println("evaluating node " + i + "/" + n);
-					for (List<Integer> parentSet : parentSets) {
-						
-						LocalConfiguration c = new LocalConfiguration(observations.getAttributes(), observations.getMarkovLag(),
-								parentSet, i);
+		for (int t = 0; t < numTransitions; t++) {
+			// System.out.println("evaluating score in transition " + t + "/" +
+			// numTransitions);
+			for (int i = 0; i < n; i++) {
+				// System.out.println("evaluating node " + i + "/" + n);
+				for (List<Integer> parentSet : parentSets) {
 
+					LocalConfiguration c = new LocalConfiguration(observations.getAttributes(),
+							observations.getMarkovLag(), parentSet, i);
 
+					do {
+						c.setConsiderChild(false);
+						double Nij = observations.count(c, t);
+						c.setConsiderChild(true);
 						do {
-							c.setConsiderChild(false);
-							double Nij = observations.count(c, t);
-							c.setConsiderChild(true);
-							do {
-								double Nijk = observations.count(c, t);
-								if (Nijk != 0 && Nijk != Nij) {
-									score +=(Math.log(Nijk) - Math.log(Nij));
-								}
-							} while (c.nextChild());
-						} while (c.nextParents());
-						
-					}
+							double Nijk = observations.count(c, t);
+							if (Nijk != 0 && Nijk != Nij) {
+								score += (Math.log(Nijk) - Math.log(Nij));
+							}
+						} while (c.nextChild());
+					} while (c.nextParents());
+
 				}
 			}
-						return score;
+		}
+		return score;
 
 	}
-	
-	
-	
 
 	// adapted from http://stackoverflow.com/a/7631893
 	private void generateCombinations(int n, int k) {
@@ -375,11 +336,11 @@ public class Scores {
 	public DynamicBayesNet toDBN() {
 		return toDBN(-1, false, false);
 	}
-	
+
 	public DynamicBayesNet toDBN(int root, boolean spanning) {
 		return toDBN(root, spanning, false);
 	}
-	
+
 	public DynamicBayesNet toDBN(int root, boolean spanning, boolean prior) {
 
 		if (!evaluated)
@@ -393,11 +354,8 @@ public class Scores {
 
 		for (int t = 0; t < numTransitions; t++) {
 
-			OptimumBranching intraRelations = new  OptimumBranching(scoresMatrix[t]);
-			
-			//System.out.println("intraRelations "+intraRelations.branching);
-			
-	
+			OptimumBranching intraRelations = new OptimumBranching(scoresMatrix[t], root, spanning);
+
 			if (verbose) {
 				double score = 0;
 				boolean[][] adj = Utils.adjacencyMatrix(intraRelations.branching, n);
@@ -416,7 +374,7 @@ public class Scores {
 						score -= scoresMatrix[t][i][i];
 				}
 
-				//System.out.println("Network score: " + score);
+				System.out.println("Network score: " + score);
 			}
 
 			List<Edge> interRelations = new ArrayList<Edge>(n * maxParents);
@@ -427,7 +385,7 @@ public class Scores {
 				int tail = intra.getTail();
 				int head = intra.getHead();
 				List<List<List<Integer>>> parentNodesT = parentNodes.get(t);
-				
+
 				for (Integer nodePast : parentNodesT.get(head).get(tail)) {
 					interRelations.add(new Edge(nodePast, head));
 					hasParent[head] = true;
@@ -440,21 +398,13 @@ public class Scores {
 					for (int nodePast : parentNodesPastT.get(i))
 						interRelations.add(new Edge(nodePast, i));
 				}
-			
-			
-			
-			//System.out.println("Inter "+interRelations);
-			// parentsnodes past 
-			
-			
-			
 
-			BayesNet bt = new BayesNet(observations.getAttributes(), observations.getMarkovLag(), intraRelations.branching,
-					interRelations);
-			
+			BayesNet bt = new BayesNet(observations.getAttributes(), observations.getMarkovLag(),
+					intraRelations.branching, interRelations);
+
 			transitionNets.add(bt);
 		}
-		if(prior) {
+		if (prior) {
 			List<Edge> prior_array = new ArrayList<Edge>();
 			List<Attribute> a = observations.getAttributes();
 			BayesNet b0 = new BayesNet(a, prior_array);
@@ -464,12 +414,12 @@ public class Scores {
 		return new DynamicBayesNet(observations.getAttributes(), transitionNets);
 
 	}
-	
-	public DynamicBayesNet to_bcDBN(ScoringFunction sf,int k) {
-		return to_bcDBN(sf, k, false); 
+
+	public DynamicBayesNet to_bcDBN(ScoringFunction sf, int k) {
+		return to_bcDBN(sf, k, false);
 	}
-	
-	public DynamicBayesNet to_bcDBN(ScoringFunction sf,int k, boolean prior) {
+
+	public DynamicBayesNet to_bcDBN(ScoringFunction sf, int k, boolean prior) {
 
 		if (!evaluated)
 			throw new IllegalStateException("Scores must be evaluated before being converted to DBN");
@@ -478,340 +428,288 @@ public class Scores {
 
 		int numTransitions = scoresMatrix.length;
 
-		List<BayesNet> transitionNets= new ArrayList<BayesNet>(numTransitions);
-		
-	
+		List<BayesNet> transitionNets = new ArrayList<BayesNet>(numTransitions);
+
 		for (int t = 0; t < numTransitions; t++) {
 
-			
-			OptimumBranching intraRelations= new OptimumBranching(scoresMatrix[t]);
-			
+			OptimumBranching intraRelations = new OptimumBranching(scoresMatrix[t]);
+
 			intraRelations.BFS();
-			
+
 			PastParents = new ArrayList<List<Integer>>(n);
-			
+
 			PresentParents = new ArrayList<List<Integer>>(n);
-			
-			for(int i=0; i<n;i++) {
-				
+
+			for (int i = 0; i < n; i++) {
+
 				ArrayList<Integer> anc = intraRelations.ancestors(i);
 
 				PastParents.add(new ArrayList<Integer>());
-				
+
 				PresentParents.add(new ArrayList<Integer>());
-				
+
 				double bestScore = Double.NEGATIVE_INFINITY;
-				
-				
+
 				for (List<Integer> parentSet : parentSets) {
-					
-					for(ArrayList<Integer> S:OptimumBranching.Subsets(anc,k)) {
-					
 
-					double score = stationaryProcess ? sf.evaluate_2(observations, parentSet, S, i) : sf
-							.evaluate_2(observations, t, parentSet, S, i);
-				
-				if(score>bestScore) {
-					bestScore=score;
-					PastParents.set(i, parentSet);
-					PresentParents.set(i, S);
-				}
-				
-				
-				
-			}
-					
-					
-					
-				}
-				
-				
-			}				
-				
-				List<Edge> intra= new ArrayList<Edge>();
-				
-				List<Edge> inter= new ArrayList<Edge>();
+					for (ArrayList<Integer> S : OptimumBranching.Subsets(anc, k)) {
 
-				
-				for(int node=0;node<n;node++) {
-					
-					for(int j=0; j<PastParents.get(node).size();j++) {
-						
-						inter.add(new Edge(PastParents.get(node).get(j),node));
-					}
-				}
-				
-				
-				
-				for(int node=0;node<n;node++) {
-					
-					for(int j=0; j<PresentParents.get(node).size();j++) {
-						
-						intra.add(new Edge(PresentParents.get(node).get(j),node));
-					}
-				}
-				
-				
-		
-
-	
-			BayesNet bt = new BayesNet(observations.getAttributes(), observations.getMarkovLag(),intra,
-					inter);
-
-			transitionNets.add(bt);
-		}
-		
-		if(prior) {
-			List<Edge> prior_array = new ArrayList<Edge>();
-			List<Attribute> a = observations.getAttributes();
-			BayesNet b0 = new BayesNet(a, prior_array);
-			return new DynamicBayesNet(observations.getAttributes(), b0, transitionNets);
-		}
-
-		return new DynamicBayesNet(observations.getAttributes(), transitionNets);
-
-	}
-	
-	
-	
-	public DynamicBayesNet to_cDBN(ScoringFunction sf,int k) {
-		return to_cDBN(sf, k, false); 
-	}
-	
-	public DynamicBayesNet to_cDBN(ScoringFunction sf,int k, boolean prior) {
-
-		if (!evaluated)
-			throw new IllegalStateException("Scores must be evaluated before being converted to DBN");
-
-		int n = observations.numAttributes();
-
-		int numTransitions = scoresMatrix.length;
-
-		List<BayesNet> transitionNets= new ArrayList<BayesNet>(numTransitions);
-		
-	
-		for (int t = 0; t < numTransitions; t++) {
-
-			
-			OptimumBranching intraRelations= new OptimumBranching(scoresMatrix[t]);
-
-			PastParents = new ArrayList<List<Integer>>(n);
-			
-			PresentParents = new ArrayList<List<Integer>>(n);
-			
-			for(int i=0; i<n;i++) {
-				
-				ArrayList<Integer> anc = intraRelations.ancestors(i);
-
-				PastParents.add(new ArrayList<Integer>());
-				
-				PresentParents.add(new ArrayList<Integer>());
-				
-				double bestScore = Double.NEGATIVE_INFINITY;
-				
-				
-				for (List<Integer> parentSet : parentSets) {
-					
-					for(ArrayList<Integer> S:OptimumBranching.Subsets(anc,k)) {
-					
-
-					double score = stationaryProcess ? sf.evaluate_2(observations, parentSet, S, i) : sf
-							.evaluate_2(observations, t, parentSet, S, i);
-				
-				if(score>bestScore) {
-					bestScore=score;
-					PastParents.set(i, parentSet);
-					PresentParents.set(i, S);
-				}
-				
-				
-				
-			}
-					
-					
-					
-				}
-				
-				
-			}				
-				
-				List<Edge> intra= new ArrayList<Edge>();
-				
-				List<Edge> inter= new ArrayList<Edge>();
-
-				
-				for(int node=0;node<n;node++) {
-					
-					for(int j=0; j<PastParents.get(node).size();j++) {
-						
-						inter.add(new Edge(PastParents.get(node).get(j),node));
-					}
-				}
-				
-				
-				
-				for(int node=0;node<n;node++) {
-					
-					for(int j=0; j<PresentParents.get(node).size();j++) {
-						
-						intra.add(new Edge(PresentParents.get(node).get(j),node));
-					}
-				}
-
-			BayesNet bt = new BayesNet(observations.getAttributes(), observations.getMarkovLag(),intra,
-					inter);
-
-			transitionNets.add(bt);
-		}
-		
-		if(prior) {
-			List<Edge> prior_array = new ArrayList<Edge>();
-			List<Attribute> a = observations.getAttributes();
-			BayesNet b0 = new BayesNet(a, prior_array);
-			return new DynamicBayesNet(observations.getAttributes(), b0, transitionNets);
-		}
-
-		return new DynamicBayesNet(observations.getAttributes(), transitionNets);
-
-	}
-
-/*	
-	public DynamicBayesNet toDBN_Ckg(ScoringFunction sf,int k) {
-
-		if (!evaluated)
-			throw new IllegalStateException("Scores must be evaluated before being converted to DBN");
-
-		int n = observations.numAttributes();
-
-		int numTransitions = scoresMatrix.length;
-
-		List<BayesNet> transitionNets= new ArrayList<BayesNet>(numTransitions);
-		
-	
-		for (int t = 0; t < numTransitions; t++) {
-
-			
-			OptimumBranching intraRelations= new OptimumBranching(scoresMatrix[t]);
-			
-			//System.out.println(intraRelations_before);
-			
-			
-			intraRelations.Ckg(scoresMatrix[t], sf, observations, k);
-					
-					
-			
-			
-			//System.out.println(intraRelations);
-			
-			
-			if (verbose) {
-				double score = 0;
-
-				boolean[][] adj = Utils.adjacencyMatrix(intraRelations.getBranching(), n);
-
-				for (int i = 0; i < n; i++) {
-					boolean isRoot = true;
-					for (int j = 0; j < n; j++) {
-						if (adj[i][j]) {
-							// score
-							score += (scoresMatrix[t][i][j] - scoresMatrix[t][i][i]);
-							isRoot = false;
+						double score = stationaryProcess ? sf.evaluate_2(observations, parentSet, S, i)
+								: sf.evaluate_2(observations, t, parentSet, S, i);
+						if (score > bestScore) {
+							bestScore = score;
+							PastParents.set(i, parentSet);
+							PresentParents.set(i, S);
 						}
 					}
-					if (isRoot)
-						// subtract since sign was inverted
-						score -= scoresMatrix[t][i][i];
 				}
-
-				
 			}
 
-			List<Edge> interRelations = new ArrayList<Edge>(n * maxParents);
+			List<Edge> intra = new ArrayList<Edge>();
 
-			boolean[] hasParent = new boolean[n];*/
-			// intraRelations_before
-			/*for (Edge intra : intraRelations) {
-				int tail = intra.getTail();
-				int head = intra.getHead();
-				List<List<List<Integer>>> parentNodesT = parentNodes.get(t);
-				for (Integer nodePast : parentNodesT.get(head).get(tail)) {
-					interRelations.add(new Edge(nodePast, head));
-					hasParent[head] = true;
+			List<Edge> inter = new ArrayList<Edge>();
+
+			for (int node = 0; node < n; node++) {
+
+				for (int j = 0; j < PastParents.get(node).size(); j++) {
+
+					inter.add(new Edge(PastParents.get(node).get(j), node));
 				}
-			}*/
-			
-			/*ancestors=intraRelations.Anc(scoresMatrix[t],k);
-			
-			for(int i=0;i<n;i++) {
-				
-				List<Integer> anc = ancestors.get(i);				
-				if(anc.size()>0) {
-					
-					hasParent[i]=true;
-					
-					
-					List<Integer> past_parents = Best_Past_Parents(anc,i,t,sf);
-					for(int j=0; j<past_parents.size();j++) {
-						interRelations.add(new Edge(past_parents.get(j),i));
-					}
-
-				}
-				
-				else hasParent[i]=false;
-
 			}
 
-			for (int i = 0; i < n; i++)
-				if (!hasParent[i]) {
-					List<List<Integer>> parentNodesPastT = parentNodesPast.get(t);
-					for (int nodePast : parentNodesPastT.get(i))
-						interRelations.add(new Edge(nodePast, i));
-				}*/
-			
-	/*		List<List<Integer>> parents = new ArrayList<List<Integer>>();
-			
-			
-			for(int i=0; i<n;i++) {
-				parents.add(new ArrayList<Integer>());
-			}
-			
-			
-			
-			
-			for(Edge e : interRelations) {
-				
-				for(int i=0; i<n;i++) {
-					
-					if(e.getHead()==i) parents.get(i).add(e.getTail());
-				}	
-			}*/
-			
-			
-			/*
-			
-			
-			List<List<Edge>> best = OptimumBranching.Best2(ancestors,scoresMatrix[t], sf, observations, k);
+			for (int node = 0; node < n; node++) {
 
-			interRelations=best.get(0);
-			
-			intraRelations=best.get(1);
-			
-			System.out.println("Inter relations "+interRelations);
-			
-			System.out.println("Intra relations "+intraRelations);*/
-			/*
-			
-			BayesNet bt = new BayesNet(observations.getAttributes(), observations.getMarkovLag(), intraRelations.branching,
-					interRelations);
+				for (int j = 0; j < PresentParents.get(node).size(); j++) {
+
+					intra.add(new Edge(PresentParents.get(node).get(j), node));
+				}
+			}
+
+			BayesNet bt = new BayesNet(observations.getAttributes(), observations.getMarkovLag(), intra, inter);
 
 			transitionNets.add(bt);
 		}
 
+		if (prior) {
+			List<Edge> prior_array = new ArrayList<Edge>();
+			List<Attribute> a = observations.getAttributes();
+			BayesNet b0 = new BayesNet(a, prior_array);
+			return new DynamicBayesNet(observations.getAttributes(), b0, transitionNets);
+		}
+
 		return new DynamicBayesNet(observations.getAttributes(), transitionNets);
 
-	}*/
-	
-	
+	}
+
+	public DynamicBayesNet to_cDBN(ScoringFunction sf, int k) {
+		return to_cDBN(sf, k, false);
+	}
+
+	public DynamicBayesNet to_cDBN(ScoringFunction sf, int k, boolean prior) {
+
+		if (!evaluated)
+			throw new IllegalStateException("Scores must be evaluated before being converted to DBN");
+
+		int n = observations.numAttributes();
+
+		int numTransitions = scoresMatrix.length;
+
+		List<BayesNet> transitionNets = new ArrayList<BayesNet>(numTransitions);
+
+		for (int t = 0; t < numTransitions; t++) {
+
+			OptimumBranching intraRelations = new OptimumBranching(scoresMatrix[t]);
+
+			PastParents = new ArrayList<List<Integer>>(n);
+
+			PresentParents = new ArrayList<List<Integer>>(n);
+
+			for (int i = 0; i < n; i++) {
+
+				ArrayList<Integer> anc = intraRelations.ancestors(i);
+
+				PastParents.add(new ArrayList<Integer>());
+
+				PresentParents.add(new ArrayList<Integer>());
+
+				double bestScore = Double.NEGATIVE_INFINITY;
+
+				for (List<Integer> parentSet : parentSets) {
+
+					for (ArrayList<Integer> S : OptimumBranching.Subsets(anc, k)) {
+
+						double score = stationaryProcess ? sf.evaluate_2(observations, parentSet, S, i)
+								: sf.evaluate_2(observations, t, parentSet, S, i);
+
+						if (score > bestScore) {
+							bestScore = score;
+							PastParents.set(i, parentSet);
+							PresentParents.set(i, S);
+						}
+
+					}
+
+				}
+
+			}
+
+			List<Edge> intra = new ArrayList<Edge>();
+
+			List<Edge> inter = new ArrayList<Edge>();
+
+			for (int node = 0; node < n; node++) {
+
+				for (int j = 0; j < PastParents.get(node).size(); j++) {
+
+					inter.add(new Edge(PastParents.get(node).get(j), node));
+				}
+			}
+
+			for (int node = 0; node < n; node++) {
+
+				for (int j = 0; j < PresentParents.get(node).size(); j++) {
+
+					intra.add(new Edge(PresentParents.get(node).get(j), node));
+				}
+			}
+
+			BayesNet bt = new BayesNet(observations.getAttributes(), observations.getMarkovLag(), intra, inter);
+
+			transitionNets.add(bt);
+		}
+
+		if (prior) {
+			List<Edge> prior_array = new ArrayList<Edge>();
+			List<Attribute> a = observations.getAttributes();
+			BayesNet b0 = new BayesNet(a, prior_array);
+			return new DynamicBayesNet(observations.getAttributes(), b0, transitionNets);
+		}
+
+		return new DynamicBayesNet(observations.getAttributes(), transitionNets);
+
+	}
+
+	/*
+	 * public DynamicBayesNet toDBN_Ckg(ScoringFunction sf,int k) {
+	 * 
+	 * if (!evaluated) throw new
+	 * IllegalStateException("Scores must be evaluated before being converted to DBN"
+	 * );
+	 * 
+	 * int n = observations.numAttributes();
+	 * 
+	 * int numTransitions = scoresMatrix.length;
+	 * 
+	 * List<BayesNet> transitionNets= new ArrayList<BayesNet>(numTransitions);
+	 * 
+	 * 
+	 * for (int t = 0; t < numTransitions; t++) {
+	 * 
+	 * 
+	 * OptimumBranching intraRelations= new OptimumBranching(scoresMatrix[t]);
+	 * 
+	 * //System.out.println(intraRelations_before);
+	 * 
+	 * 
+	 * intraRelations.Ckg(scoresMatrix[t], sf, observations, k);
+	 * 
+	 * 
+	 * 
+	 * 
+	 * //System.out.println(intraRelations);
+	 * 
+	 * 
+	 * if (verbose) { double score = 0;
+	 * 
+	 * boolean[][] adj = Utils.adjacencyMatrix(intraRelations.getBranching(), n);
+	 * 
+	 * for (int i = 0; i < n; i++) { boolean isRoot = true; for (int j = 0; j < n;
+	 * j++) { if (adj[i][j]) { // score score += (scoresMatrix[t][i][j] -
+	 * scoresMatrix[t][i][i]); isRoot = false; } } if (isRoot) // subtract since
+	 * sign was inverted score -= scoresMatrix[t][i][i]; }
+	 * 
+	 * 
+	 * }
+	 * 
+	 * List<Edge> interRelations = new ArrayList<Edge>(n * maxParents);
+	 * 
+	 * boolean[] hasParent = new boolean[n];
+	 */
+	// intraRelations_before
+	/*
+	 * for (Edge intra : intraRelations) { int tail = intra.getTail(); int head =
+	 * intra.getHead(); List<List<List<Integer>>> parentNodesT = parentNodes.get(t);
+	 * for (Integer nodePast : parentNodesT.get(head).get(tail)) {
+	 * interRelations.add(new Edge(nodePast, head)); hasParent[head] = true; } }
+	 */
+
+	/*
+	 * ancestors=intraRelations.Anc(scoresMatrix[t],k);
+	 * 
+	 * for(int i=0;i<n;i++) {
+	 * 
+	 * List<Integer> anc = ancestors.get(i); if(anc.size()>0) {
+	 * 
+	 * hasParent[i]=true;
+	 * 
+	 * 
+	 * List<Integer> past_parents = Best_Past_Parents(anc,i,t,sf); for(int j=0;
+	 * j<past_parents.size();j++) { interRelations.add(new
+	 * Edge(past_parents.get(j),i)); }
+	 * 
+	 * }
+	 * 
+	 * else hasParent[i]=false;
+	 * 
+	 * }
+	 * 
+	 * for (int i = 0; i < n; i++) if (!hasParent[i]) { List<List<Integer>>
+	 * parentNodesPastT = parentNodesPast.get(t); for (int nodePast :
+	 * parentNodesPastT.get(i)) interRelations.add(new Edge(nodePast, i)); }
+	 */
+
+	/*
+	 * List<List<Integer>> parents = new ArrayList<List<Integer>>();
+	 * 
+	 * 
+	 * for(int i=0; i<n;i++) { parents.add(new ArrayList<Integer>()); }
+	 * 
+	 * 
+	 * 
+	 * 
+	 * for(Edge e : interRelations) {
+	 * 
+	 * for(int i=0; i<n;i++) {
+	 * 
+	 * if(e.getHead()==i) parents.get(i).add(e.getTail()); } }
+	 */
+
+	/*
+	 * 
+	 * 
+	 * List<List<Edge>> best = OptimumBranching.Best2(ancestors,scoresMatrix[t], sf,
+	 * observations, k);
+	 * 
+	 * interRelations=best.get(0);
+	 * 
+	 * intraRelations=best.get(1);
+	 * 
+	 * System.out.println("Inter relations "+interRelations);
+	 * 
+	 * System.out.println("Intra relations "+intraRelations);
+	 */
+	/*
+	 * 
+	 * BayesNet bt = new BayesNet(observations.getAttributes(),
+	 * observations.getMarkovLag(), intraRelations.branching, interRelations);
+	 * 
+	 * transitionNets.add(bt); }
+	 * 
+	 * return new DynamicBayesNet(observations.getAttributes(), transitionNets);
+	 * 
+	 * }
+	 */
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -845,15 +743,15 @@ public class Scores {
 			// sb.append(ls);
 			//
 			// sb.append("Parents in t for each parent in t+1:" + ls);
-			// sb.append("t+1:	");
+			// sb.append("t+1: ");
 			// for (int i = 0; i < n; i++) {
-			// sb.append(i + "	");
+			// sb.append(i + " ");
 			// }
 			// sb.append(ls);
 			// for (int i = 0; i < n; i++) {
-			// sb.append(i + ":	");
+			// sb.append(i + ": ");
 			// for (int j = 0; j < n; j++) {
-			// sb.append(parentNodes.get(t).get(i).get(j) + "	");
+			// sb.append(parentNodes.get(t).get(i).get(j) + " ");
 			// }
 			// sb.append(ls);
 			// }
