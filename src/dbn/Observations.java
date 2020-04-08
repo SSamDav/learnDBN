@@ -179,6 +179,7 @@ public class Observations {
 	 */
 	public Observations(List<Attribute> attributes, int[][][] observationsMatrix, double[][] counts) {
 		this.attributes = attributes;
+		this.markovLag = observationsMatrix[0][0].length / attributes.size() - 1;
 		this.usefulObservations = observationsMatrix;
 		this.counts = counts;
 		numSubjects = new int[observationsMatrix.length];
@@ -885,7 +886,7 @@ public class Observations {
 			}
 			totalCombinations += subjectCombinations;
 		}
-
+		
 		newObservations = new int[numTransitions][totalCombinations][numAttributes * (markovLag + 1)];
 		newCounts = new double[numTransitions][totalCombinations];
 		
